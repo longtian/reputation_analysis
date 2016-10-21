@@ -19,6 +19,7 @@
   "homepage": "https://github.com/cloudinsight/reputation_analysis#readme",
   "dependencies": {
     "async": "^2.1.2",
+    "debug": "^2.2.0",
     "github": "^5.2.2",
     "mongodb": "^2.2.10",
     "underscore": "^1.8.3"

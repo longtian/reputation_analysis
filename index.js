@@ -5,6 +5,8 @@ const listAll = require('./lib/listAll');
 const async = require('async');
 const _ = require('underscore');
 
+const debug = require('debug')('reputation_analysis');
+
 const {
   USERNAME,
   MONGODB
@@ -13,6 +15,7 @@ const {
 MongoClient.connect(MONGODB, function (err, db) {
   assert(!err);
   db.unref();
+  debug(`Connected to ${MONGODB}`)
 
   const repos = db.collection('repos');
   const activities = db.collection('activity');
@@ -36,6 +39,9 @@ MongoClient.connect(MONGODB, function (err, db) {
       ),
       {
         upsert: true
+      },
+      ()=> {
+        debug(`Saved ${USERNAME} to user`)
       }
     );
   });
@@ -60,7 +66,9 @@ MongoClient.connect(MONGODB, function (err, db) {
             }),
             upsert: true
           }
-        }))
+        })), ()=> {
+          debug(`Saved ${repositories.length} repos for ${USERNAME}`)
+        }
       );
     }
   });
@@ -69,7 +77,7 @@ MongoClient.connect(MONGODB, function (err, db) {
     const DEFAULT_HEADERS = {
       Accept: 'application/vnd.github.v3.star+json'
     };
-    async.eachLimit(res, 1, (repo, done)=> {
+    async.eachLimit(res, 3, (repo, done)=> {
       github.activity.getStargazersForRepo({
         owner: USERNAME,
         repo: repo.name,
@@ -79,23 +87,29 @@ MongoClient.connect(MONGODB, function (err, db) {
         if (!stargazers.length) {
           done();
         } else {
-          activities.bulkWrite(stargazers.map(stargazer=>({
-            updateOne: {
-              filter: {
-                id: stargazer.user.id,
-                full_name: repo.full_name,
-                type: 'star'
-              },
-              update: {
-                id: stargazer.user.id,
-                date: new Date(stargazer.starred_at),
-                full_name: repo.full_name,
-                login: stargazer.user.login,
-                type: 'star'
-              },
-              upsert: true
+          activities.bulkWrite(
+            stargazers.map(stargazer=>({
+              updateOne: {
+                filter: {
+                  id: stargazer.user.id,
+                  full_name: repo.full_name,
+                  type: 'star'
+                },
+                update: {
+                  id: stargazer.user.id,
+                  date: new Date(stargazer.starred_at),
+                  full_name: repo.full_name,
+                  login: stargazer.user.login,
+                  type: 'star'
+                },
+                upsert: true
+              }
+            })),
+            ()=> {
+              debug(`Saved ${stargazers.length} stargazers for ${repo.full_name}`);
+              done();
             }
-          })), done);
+          );
         }
       })
     }, resolve);
