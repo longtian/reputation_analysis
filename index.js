@@ -30,7 +30,10 @@ MongoClient.connect(MONGODB, function (err, db) {
               _id: repo.id,
             },
             update: Object.assign(_.omit(repo, [...ommitKeys, 'owner', 'id']), {
-              _id: repo.id
+              _id: repo.id,
+              created_at: new Date(repo.created_at),
+              updated_at: new Date(repo.updated_at),
+              pushed_at: new Date(repo.pushed_at),
             }),
             upsert: true
           }
@@ -62,7 +65,7 @@ MongoClient.connect(MONGODB, function (err, db) {
               },
               update: {
                 id: stargazer.user.id,
-                date: stargazer.starred_at,
+                date: new Date(stargazer.starred_at),
                 full_name: repo.full_name,
                 login: stargazer.user.login,
                 type: 'star'
