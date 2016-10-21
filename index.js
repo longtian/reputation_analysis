@@ -13,9 +13,32 @@ const {
 MongoClient.connect(MONGODB, function (err, db) {
   assert(!err);
   db.unref();
+
   const repos = db.collection('repos');
   const activities = db.collection('activity');
+  const users = db.collection('user');
+
   const fetchRepos = github.repos.getForUser({ user: USERNAME, per_page: 100 }).then(listAll({}));
+
+  github.users.getForUser({
+    user: USERNAME
+  }).then(user => {
+    users.updateOne(
+      {
+        _id: user.id
+      },
+      Object.assign({},
+        _.omit(user, ['id', 'meta']),
+        {
+          created_at: new Date(user.created_at),
+          updated_at: new Date(user.updated_at),
+        }
+      ),
+      {
+        upsert: true
+      }
+    );
+  });
 
   fetchRepos.then(repositories => {
     const [firstRepo ] = repositories;
