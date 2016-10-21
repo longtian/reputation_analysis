@@ -64,7 +64,7 @@ MongoClient.connect(MONGODB, function (err, db) {
                 id: stargazer.user.id,
                 date: stargazer.starred_at,
                 full_name: repo.full_name,
-                login: stargazer.login,
+                login: stargazer.user.login,
                 type: 'star'
               },
               upsert: true
