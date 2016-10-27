@@ -118,7 +118,10 @@ MongoClient.connect(MONGODB, function (err, db) {
 });
 
 
-
+setTimeout(()=> {
+  console.log('timeout after 99 seconds')
+  process.exit(0);
+}, 99000);
 
 
 
